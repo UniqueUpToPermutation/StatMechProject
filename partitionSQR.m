@@ -1,6 +1,13 @@
 % Compute the log partition function for a square lattice
-function [logZ_perSite] = partitionSQR(beta, bond_dim, log4_N)
+function [logZ_perSite] = partitionSQR(beta, bond_dim, log4_N, eps)
     T = tensorSQR(beta);
+    
+    if nargin < 4
+        eps = 1E-2;
+    end
+    
+    fprintf('\nBeta = %f\n', beta);
+    fprintf('-----------------------------------------\n');
     
     logZ_perSite = 0;
     log2_N = 2 * log4_N;
@@ -8,7 +15,7 @@ function [logZ_perSite] = partitionSQR(beta, bond_dim, log4_N)
    
     for log2_n=log2_N:-1:2 % Log4 number of lattice sites
         % Split the tensor T into two copies of S
-        [S, sigma1] = tensorSQRSplit(T, bond_dim);
+        [S, sigma1] = tensorSQRSplit(T, bond_dim, eps);
         % Contract four copies of S around a loop to form the new T
         T = loopContractSQR(S);
         % We've normalized by sigma1, must add this
@@ -17,24 +24,22 @@ function [logZ_perSite] = partitionSQR(beta, bond_dim, log4_N)
     end
     
     % Contract the final tensors when only two remain
-    T = ttt(T, T, [2, 4], [4, 2]);  % Contract left and right
+    T = ttt(T, T, [2, 4], [2, 4]);  % Contract left and right
     T = contract(T, 1, 2);          % Contract top and bottom
     T = contract(T, 1, 2);          % Contract top and bottom
     logZ_perSite = logZ_perSite + log(T);
+    
+    fprintf('-----------------------------------------\n');
 end
 
+% Perform a loop contraction of four S tensors
 function [T] = loopContractSQR(S)
     % T'_{ijkl} = sum_{i'j'k'l'} S_{i'j'i} S_{j'k'j} S_{k'l'k} S_{l'i'l}
-    T1 = ttt(S, S, 2, 1); % T1_{i'ik'j} and T1_{k'ki'l}
-    T = ttt(T1, T1, [1, 3], [3, 1]);
-    
-    err = norm(T - permute(T, [4, 3, 2, 1])) / norm(T);
-    err = norm(T - permute(T, [3, 4, 2, 1])) / norm(T);
-    err = norm(T - permute(T, [2, 1, 4, 3])) / norm(T);
-    err = norm(T - permute(T, [2, 3, 4, 1])) / norm(T);
+    T1 = ttt(S, S, 1, 1); % T1_{i'ik'j} and T1_{k'ki'l}
+    T = ttt(T1, T1, [1, 3], [1, 3]);
 end
 
-function [delta, nrm] = accuracyCheck(S, T)
+function [delta] = accuracyCheck(S, T)
     % T_{ijkl} = sum_m S_{ijm} S_{klm}
     Tapprox = ttt(S, S, 3, 3);
     diff = T - Tapprox;
@@ -43,20 +48,19 @@ function [delta, nrm] = accuracyCheck(S, T)
     delta = delta / nrm;
 end
 
-function [S, sigma1] = tensorSQRSplit(T, bond_dim)
+% Perform a split of the T tensor
+function [S, sigma1] = tensorSQRSplit(T, bond_dim, eps)
     i_dim = size(T, 1);
     j_dim = size(T, 2);
     k_dim = size(T, 3);
     l_dim = size(T, 4);
     assert(i_dim == j_dim && j_dim == k_dim && k_dim == l_dim);
     
-    eps = 1E-3;
-    
     % Turn the tensor T into a matrix for splitting
     T_ = tenmat(T, [1, 2], [3, 4]);
     
     % Take SVD of T
-    [U, sigmas, V] = svd(T_.data);
+    [U, sigmas, ~] = svd(T_.data);
     
     diags_ = diag(sigmas);
     diags_ = diags_(diags_ > eps * diags_(1));
@@ -73,17 +77,16 @@ function [S, sigma1] = tensorSQRSplit(T, bond_dim)
     S = reshape(S, [i_dim, j_dim, bond_dim]);
     
     % Check that the approximation is accurate
-    [err, mag] = accuracyCheck(S, T);
-    fprintf('Relative Approximation Error (Tensor): %f / mag = %f\n', err, mag);
+    err = accuracyCheck(S, T);
+    fprintf('Relative Approximation Error: %f\t[Bond Dimension = %i]\n', ...
+        err, bond_dim);
     
     % Normalize S and take out factor of sigma1
     sigma1 = diags_(1, 1);
     S = S / sqrt(sigma1);
-    
-    err = norm(S - permute(S, [2, 1, 3])) / norm(S);
-    fprintf('Symmetry Break: %f\n', err);
 end
 
+% Setup initial T-tensor
 function [T] = tensorSQR(beta)
     bond_matrix = [exp(beta) exp(-beta); exp(-beta) exp(beta)];
     [U, Sigma, V] = svd(bond_matrix);
