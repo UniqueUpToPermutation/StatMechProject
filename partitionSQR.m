@@ -23,15 +23,7 @@ function [logZ_perSite] = partitionSQR(beta, J, h, bond_dim, log4_N, eps)
         factor = factor / 2;
         T = T / sigma1;
         logZ_perSite = logZ_perSite + factor * log(sigma1);
-        disp(logZ_perSite);
-        
     end
-    
-    % Contract the final tensors when only two remain
-    T = ttt(T, T, [2, 4], [2, 4]);  % Contract left and right
-    T = contract(T, 1, 2);          % Contract top and bottom
-    T = contract(T, 1, 2);          % Contract top and bottom
-    % logZ_perSite = logZ_perSite + log(T);
     
     fprintf('-----------------------------------------\n');
 end
@@ -39,11 +31,8 @@ end
 % Perform a loop contraction of four S tensors
 function [T] = loopContractSQR(S)
     % T'_{ijkl} = sum_{i'j'k'l'} S_{i'j'i} S_{j'k'j} S_{k'l'k} S_{l'i'l}
-    % T1 = ttt(S, S, 1, 1); % T1_{i'ik'j} and T1_{k'ki'l}
-    % T = ttt(T1, T1, [1, 3], [1, 3]);
-    
-    T1 = ttt(S, S, 3, 2);
-    T = ttt(T1, T1, [2, 4], [4, 2]);
+    T1 = ttt(S, S, 1, 1); % T1_{i'ik'j} and T1_{k'ki'l}
+    T = ttt(T1, T1, [1, 3], [1, 3]);
 end
 
 function [delta] = accuracyCheck(S, T)
@@ -82,12 +71,11 @@ function [S, sigma1] = tensorSQRSplit(T, bond_dim, eps)
     % Reshape into split tensor S
     S = tensor(S_);
     S = reshape(S, [i_dim, j_dim, bond_dim]);
-    S = permute(S, [3, 1, 2]); %%% DEBUG
     
     % Check that the approximation is accurate
-    % err = accuracyCheck(S, T);
-    % fprintf('Relative Approximation Error: %f\t[Bond Dimension = %i]\n', ...
-    %    err, bond_dim);
+    err = accuracyCheck(S, T);
+    fprintf('Relative Approximation Error: %f\t[Bond Dimension = %i]\n', ...
+        err, bond_dim);
     
     sigma1 = diags_(1, 1);
 end
