@@ -1,5 +1,5 @@
 % Compute the log partition function for a square lattice
-function [logZ_perSite] = partitionSQR(beta, J, h, bond_dim, log4_N, eps)
+function [logZ_perSite, aux] = partitionSQR(beta, J, h, bond_dim, log4_N, eps)
     T = tensorSQR(beta, J, h);
     
     if nargin < 4
@@ -12,6 +12,9 @@ function [logZ_perSite] = partitionSQR(beta, J, h, bond_dim, log4_N, eps)
     logZ_perSite = 0;
     log2_N = 2 * log4_N;
     factor = 1;
+    
+    aux = struct();
+    aux.bond_dims = zeros(1, log2_N - 1);
    
     for log2_n=log2_N:-1:2 % Log4 number of lattice sites
         % Split the tensor T into two copies of S
@@ -23,6 +26,8 @@ function [logZ_perSite] = partitionSQR(beta, J, h, bond_dim, log4_N, eps)
         factor = factor / 2;
         T = T / sigma1;
         logZ_perSite = logZ_perSite + factor * log(sigma1);
+        
+        aux.bond_dims(log2_N - log2_n + 1) = size(T, 1);
     end
     
     fprintf('-----------------------------------------\n');
