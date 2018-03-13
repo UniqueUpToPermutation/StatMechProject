@@ -99,13 +99,13 @@ function [T] = tensorSQR_TRI(beta, J, h, mu)
     S = U * sqrt(Sigma) * V';
     
     % T_{ijkl} = sum_m S_{mi} S_{mj} S_{mk} S_{ml}
-    T = tensor(zeros(2, 2, 2, 2));
+    T = tensor(zeros(3, 3, 3, 3));
     
-    for i=1:2
-        for j=1:2
-            for k=1:2
-                for l=1:2
-                    for m=1:2
+    for i=1:3
+        for j=1:3
+            for k=1:3
+                for l=1:3
+                    for m=1:3
                         T(i,j,k,l) = T(i,j,k,l) + ...
                             S(m,i) * S(m,j) * S(m,k) * S(m,l);
                     end

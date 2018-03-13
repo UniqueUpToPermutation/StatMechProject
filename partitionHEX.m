@@ -33,7 +33,7 @@ end
 function [T] = loopContractHEX(S)
     % T'_{ijk} = sum_{i'j'k'} S_{i'j'i} S_{j'k'j} S_{k'i'k}
     T1 = ttt(S, S, 1, 1);
-    T = ttt(T1, S, [1, 3], [1, 2]);
+    T = ttt(T1, S, [1, 3], [2, 1]);
 end
 
 function [delta] = accuracyCheck(S, T)
