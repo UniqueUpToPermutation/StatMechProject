@@ -1,5 +1,5 @@
 % Compute the log partition function for a honeycomb lattice
-function [logZ_perSite] = partitionHEX(beta, J, h, bond_dim, log4_N, eps)
+function [logZ_perSite] = partitionHEX(beta, J, h, bond_dim, log3_N, eps)
     T = tensorHEX(beta, J, h);
     
     if nargin < 4
@@ -10,10 +10,10 @@ function [logZ_perSite] = partitionHEX(beta, J, h, bond_dim, log4_N, eps)
     fprintf('-----------------------------------------\n');
     
     logZ_perSite = 0;
-    log2_N = 2 * log4_N;
     factor = 1;
    
-    for log2_n=log2_N:-1:2 % Log4 number of lattice sites
+    for log3_n=log3_N:-1:2 % Log3 number of lattice sites
+        % Join two T tensors together
         M = tensorHEXJoin(T);
         % Split the tensor T into two copies of S
         [S, sigma1] = tensorHEXSplit(M, bond_dim, eps);
@@ -33,7 +33,7 @@ end
 function [T] = loopContractHEX(S)
     % T'_{ijk} = sum_{i'j'k'} S_{i'j'i} S_{j'k'j} S_{k'i'k}
     T1 = ttt(S, S, 1, 1);
-    T = ttt(T1, S, [1, 3], [2, 1]);
+    T = ttt(T1, S, [1, 3], [1, 2]);
 end
 
 function [delta] = accuracyCheck(S, T)
@@ -110,6 +110,4 @@ function [T] = tensorHEX(beta, J, h)
             end
         end
     end
-    
-    
 end
